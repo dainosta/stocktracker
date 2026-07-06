@@ -297,7 +297,7 @@ export default function App() {
                 setShowSuggestions(true);
               }}
               onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
             />
             {showSuggestions && (
               <div className="suggestions-list" style={{maxHeight: '300px', overflowY: 'auto'}}>
@@ -306,7 +306,7 @@ export default function App() {
                     <div 
                       key={t} 
                       className="suggestion-item" 
-                      onMouseDown={(e) => { e.preventDefault(); handleAddStock(t); }}
+                      onClick={() => handleAddStock(t)}
                     >
                       <span style={{fontWeight: 'bold', color: 'var(--primary-accent)'}}>{t}</span>
                       <span style={{color: 'var(--text-muted)'}}><FiPlus /> Thêm</span>
