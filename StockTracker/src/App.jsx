@@ -338,7 +338,6 @@ export default function App() {
                 <tr>
                   <th>Mã CP</th>
                   <th>Phân loại (Tag)</th>
-                  <th>Ghi chú</th>
                   <th></th>
                 </tr>
               </thead>
@@ -353,11 +352,6 @@ export default function App() {
                     <td>
                       <span className={`tag tag-${stock.tag}`}>
                         {stock.tag === 'tbd' ? 'TBD' : stock.tag === 'in' ? 'IN' : stock.tag === 'out' ? 'OUT' : 'TOO ROUGH'}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{color: 'var(--text-muted)', fontSize: '0.9rem'}}>
-                        {stock.notes ? (stock.notes.length > 20 ? stock.notes.substring(0, 20) + '...' : stock.notes) : '—'}
                       </span>
                     </td>
                     <td>
