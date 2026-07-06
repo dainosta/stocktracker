@@ -125,15 +125,17 @@ export default function App() {
       ticker: stockTicker,
       tag: 'tbd',
       notes: '',
-      checklist: {},
-      template_id: null
+      checklist: {}
     };
     
     const { data, error } = await supabase.from('stocks').insert([newStock]).select();
     if (!error && data?.length > 0) {
       setSearchTerm('');
       setShowSuggestions(false);
+      setStocks(prev => [...prev, data[0]]);
       setSelectedStock(data[0]);
+    } else if (error) {
+      alert("Lỗi khi thêm cổ phiếu: " + error.message);
     }
   };
 
@@ -301,7 +303,11 @@ export default function App() {
               <div className="suggestions-list" style={{maxHeight: '300px', overflowY: 'auto'}}>
                 {filteredTickers.length > 0 ? (
                   filteredTickers.map(t => (
-                    <div key={t} className="suggestion-item" onClick={() => handleAddStock(t)}>
+                    <div 
+                      key={t} 
+                      className="suggestion-item" 
+                      onMouseDown={(e) => { e.preventDefault(); handleAddStock(t); }}
+                    >
                       <span style={{fontWeight: 'bold', color: 'var(--primary-accent)'}}>{t}</span>
                       <span style={{color: 'var(--text-muted)'}}><FiPlus /> Thêm</span>
                     </div>
