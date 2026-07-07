@@ -101,7 +101,12 @@ export default function App() {
       setStocks(stocksData || []);
       if (selectedStockRef.current) {
         const updatedSelected = (stocksData || []).find(s => s.id === selectedStockRef.current.id);
-        if (updatedSelected) setSelectedStock(updatedSelected);
+        if (updatedSelected) {
+          setSelectedStock(updatedSelected);
+        } else {
+          // Khắc phục lỗi Bóng ma (Ghost stock) nếu mã đã bị xoá
+          setSelectedStock(null);
+        }
       }
     }
     
@@ -116,6 +121,14 @@ export default function App() {
     }
   }, [session]);
 
+  const debouncedFetchData = useMemo(() => {
+    let timeout;
+    return () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fetchData(), 1000);
+    };
+  }, [fetchData]);
+
   useEffect(() => {
     fetchData();
     
@@ -124,14 +137,14 @@ export default function App() {
     
     const channel = supabase
       .channel('public_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'stocks', filter: `user_id=eq.${session.user.id}` }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_templates', filter: `user_id=eq.${session.user.id}` }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stocks', filter: `user_id=eq.${session.user.id}` }, () => debouncedFetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_templates', filter: `user_id=eq.${session.user.id}` }, () => debouncedFetchData())
       .subscribe();
       
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session, fetchData]);
+  }, [session, fetchData, debouncedFetchData]);
 
   // Sort logic
   const sortedStocks = useMemo(() => {
@@ -186,8 +199,17 @@ export default function App() {
   };
 
   const debouncedSupabaseUpdate = useMemo(
-    () => debounceByKey(async (id, field, value) => {
-      await supabase.from('stocks').update({ [field]: value }).eq('id', id);
+    () => debounceByKey(async (id, field, value, previousStockData) => {
+      const { error } = await supabase.from('stocks').update({ [field]: value }).eq('id', id);
+      if (error) {
+        console.error("Lỗi cập nhật dữ liệu:", error);
+        alert(`Lỗi khi lưu dữ liệu (${field}). Đang hoàn tác lại...`);
+        // Rollback
+        setStocks(prev => prev.map(s => s.id === id ? previousStockData : s));
+        if (selectedStockRef.current?.id === id) {
+          setSelectedStock(previousStockData);
+        }
+      }
     }, 600),
     []
   );
@@ -195,13 +217,16 @@ export default function App() {
   const handleUpdateStock = (id, field, value) => {
     if (!session?.user) return;
     
+    const previousStockData = stocks.find(s => s.id === id);
+    if (!previousStockData) return;
+    
     setStocks(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
     if (selectedStock?.id === id) {
       setSelectedStock(prev => ({ ...prev, [field]: value }));
     }
 
     const key = `${id}-${field}`;
-    debouncedSupabaseUpdate(key, id, field, value);
+    debouncedSupabaseUpdate(key, id, field, value, previousStockData);
   };
 
   const handleChecklistItemToggle = (itemId) => {
@@ -253,21 +278,39 @@ export default function App() {
       name,
       data: JSON.parse(JSON.stringify(defaultChecklistTemplate)) // Copy default as a starting point
     };
-    await supabase.from('checklist_templates').insert([newTemplate]);
+    try {
+      const { error } = await supabase.from('checklist_templates').insert([newTemplate]);
+      if (error) throw error;
+      fetchData(); // Sync up
+    } catch (err) {
+      alert("Lỗi khi tạo mẫu mới: " + err.message);
+    }
   };
 
   const saveEditingTemplate = async () => {
     if (!editingTemplate) return;
-    await supabase.from('checklist_templates').update({
-      name: editingTemplate.name,
-      data: editingTemplate.data
-    }).eq('id', editingTemplate.id);
-    setEditingTemplate(null);
+    try {
+      const { error } = await supabase.from('checklist_templates').update({
+        name: editingTemplate.name,
+        data: editingTemplate.data
+      }).eq('id', editingTemplate.id);
+      if (error) throw error;
+      setEditingTemplate(null);
+      fetchData();
+    } catch (err) {
+      alert("Lỗi khi lưu mẫu: " + err.message);
+    }
   };
   
   const deleteTemplate = async (id) => {
     if (!confirm("Bạn có chắc muốn xoá mẫu này?")) return;
-    await supabase.from('checklist_templates').delete().eq('id', id);
+    try {
+      const { error } = await supabase.from('checklist_templates').delete().eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (err) {
+      alert("Lỗi khi xóa mẫu: " + err.message);
+    }
   };
 
   if (loading) return <div className="auth-page"><p>Loading...</p></div>;
