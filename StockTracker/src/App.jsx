@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase, signInWithEmail, signUpWithEmail, logout } from './services/supabase';
 import { FiLogOut, FiSearch, FiPlus, FiTrash2, FiFileText, FiCheckSquare, FiSettings, FiX, FiEdit2, FiSave } from 'react-icons/fi';
 import { defaultChecklistTemplate } from './data/defaultChecklist';
@@ -6,11 +6,14 @@ import tickerData from './data/tickers.json';
 import './index.css';
 
 // Debounce helper
-const debounce = (func, wait) => {
-  let timeout;
-  return (...args) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
+const debounceByKey = (func, wait) => {
+  const timeouts = {};
+  return (key, ...args) => {
+    if (timeouts[key]) clearTimeout(timeouts[key]);
+    timeouts[key] = setTimeout(() => {
+      func(...args);
+      delete timeouts[key];
+    }, wait);
   };
 };
 
@@ -34,6 +37,11 @@ export default function App() {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null); // null if list, object if editing
 
+  const selectedStockRef = useRef(selectedStock);
+  useEffect(() => {
+    selectedStockRef.current = selectedStock;
+  }, [selectedStock]);
+
   // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -51,7 +59,7 @@ export default function App() {
   }, []);
 
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!session?.user) return;
     
     // Fetch Stocks
@@ -62,8 +70,8 @@ export default function App() {
       
     if (!stocksError) {
       setStocks(stocksData || []);
-      if (selectedStock) {
-        const updatedSelected = (stocksData || []).find(s => s.id === selectedStock.id);
+      if (selectedStockRef.current) {
+        const updatedSelected = (stocksData || []).find(s => s.id === selectedStockRef.current.id);
         if (updatedSelected) setSelectedStock(updatedSelected);
       }
     }
@@ -77,7 +85,7 @@ export default function App() {
     if (!templatesError) {
       setTemplates(templatesData || []);
     }
-  };
+  }, [session]);
 
   useEffect(() => {
     fetchData();
@@ -94,7 +102,7 @@ export default function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session]);
+  }, [session, fetchData]);
 
   // Sort logic
   const sortedStocks = useMemo(() => {
@@ -149,7 +157,7 @@ export default function App() {
   };
 
   const debouncedSupabaseUpdate = useMemo(
-    () => debounce(async (id, field, value) => {
+    () => debounceByKey(async (id, field, value) => {
       await supabase.from('stocks').update({ [field]: value }).eq('id', id);
     }, 600),
     []
@@ -163,10 +171,11 @@ export default function App() {
       setSelectedStock(prev => ({ ...prev, [field]: value }));
     }
 
-    debouncedSupabaseUpdate(id, field, value);
+    const key = `${id}-${field}`;
+    debouncedSupabaseUpdate(key, id, field, value);
   };
 
-  const handleChecklistItemToggle = async (itemId) => {
+  const handleChecklistItemToggle = (itemId) => {
     if (!session?.user || !selectedStock) return;
     const currentChecklist = selectedStock.checklist || {};
     
@@ -542,7 +551,7 @@ export default function App() {
                         type="text" className="input-search" value={section.title} style={{marginBottom: '8px'}}
                         onChange={e => {
                           const newData = [...editingTemplate.data];
-                          newData[sIdx].title = e.target.value;
+                          newData[sIdx] = { ...newData[sIdx], title: e.target.value };
                           setEditingTemplate({...editingTemplate, data: newData});
                         }}
                       />
@@ -552,12 +561,14 @@ export default function App() {
                             type="text" className="input-search" value={item.text} 
                             onChange={e => {
                               const newData = [...editingTemplate.data];
-                              newData[sIdx].items[iIdx].text = e.target.value;
+                              newData[sIdx] = { ...newData[sIdx], items: [...newData[sIdx].items] };
+                              newData[sIdx].items[iIdx] = { ...newData[sIdx].items[iIdx], text: e.target.value };
                               setEditingTemplate({...editingTemplate, data: newData});
                             }}
                           />
                           <button className="btn-outline" style={{color: '#f87171', padding: '8px'}} onClick={() => {
                             const newData = [...editingTemplate.data];
+                            newData[sIdx] = { ...newData[sIdx], items: [...newData[sIdx].items] };
                             newData[sIdx].items.splice(iIdx, 1);
                             setEditingTemplate({...editingTemplate, data: newData});
                           }}><FiX /></button>
@@ -565,6 +576,7 @@ export default function App() {
                       ))}
                       <button className="btn-outline" style={{fontSize: '0.8rem'}} onClick={() => {
                         const newData = [...editingTemplate.data];
+                        newData[sIdx] = { ...newData[sIdx], items: [...newData[sIdx].items] };
                         newData[sIdx].items.push({ id: `q-${Date.now()}`, text: "Câu hỏi mới" });
                         setEditingTemplate({...editingTemplate, data: newData});
                       }}><FiPlus /> Thêm câu hỏi</button>
