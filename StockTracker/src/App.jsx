@@ -19,9 +19,14 @@ const debounceByKey = (func, wait) => {
 
 const DebouncedTextarea = ({ value, onChange, delay = 500, ...props }) => {
   const [localValue, setLocalValue] = useState(value || '');
+  const lastSentValue = useRef(value || '');
 
   useEffect(() => {
-    setLocalValue(value || '');
+    const safeValue = value || '';
+    if (safeValue !== lastSentValue.current) {
+      setLocalValue(safeValue);
+      lastSentValue.current = safeValue;
+    }
   }, [value]);
 
   const handleChange = (e) => {
@@ -30,12 +35,13 @@ const DebouncedTextarea = ({ value, onChange, delay = 500, ...props }) => {
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (localValue !== (value || '')) {
+      if (localValue !== lastSentValue.current) {
         onChange(localValue);
+        lastSentValue.current = localValue;
       }
     }, delay);
     return () => clearTimeout(handler);
-  }, [localValue, value, onChange, delay]);
+  }, [localValue, onChange, delay]);
 
   return <textarea value={localValue} onChange={handleChange} {...props} />;
 };
@@ -215,7 +221,7 @@ export default function App() {
     });
   };
 
-  const handleChecklistCommentChange = useCallback((itemId, comment) => {
+  const handleChecklistCommentChange = (itemId, comment) => {
     if (!session?.user || !selectedStock) return;
     const currentChecklist = selectedStock.checklist || {};
     
@@ -226,7 +232,7 @@ export default function App() {
       ...currentChecklist,
       [itemId]: { checked: isChecked, comment }
     });
-  }, [session, selectedStock, stocks]);
+  };
 
   const handleDeleteStock = async (id) => {
     if (!session?.user || !confirm("Bạn có chắc muốn xoá mã này khỏi danh sách?")) return;
@@ -461,7 +467,7 @@ export default function App() {
 
               <div style={{marginBottom: '24px'}}>
                 <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', marginBottom: '12px'}}><FiFileText /> Ghi chú</h3>
-                <DebouncedTextarea className="notes-area" placeholder="Ghi chú..." value={selectedStock.notes || ''} onChange={(val) => handleUpdateStock(selectedStock.id, 'notes', val)} />
+                <DebouncedTextarea key={`${selectedStock.id}-notes`} className="notes-area" placeholder="Ghi chú..." value={selectedStock.notes || ''} onChange={(val) => handleUpdateStock(selectedStock.id, 'notes', val)} />
               </div>
 
               <div>
@@ -509,6 +515,7 @@ export default function App() {
                           </div>
                           <div style={{paddingLeft: '30px'}}>
                             <DebouncedTextarea 
+                              key={`${selectedStock.id}-${item.id}`}
                               className="notes-area" 
                               placeholder="Thêm phân tích/đánh giá chi tiết cho mục này..."
                               value={comment}
