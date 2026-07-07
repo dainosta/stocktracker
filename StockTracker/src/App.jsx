@@ -17,33 +17,53 @@ const debounceByKey = (func, wait) => {
   };
 };
 
-const DebouncedTextarea = ({ value, onChange, delay = 500, ...props }) => {
+const ManualNoteEditor = ({ value, onChange, placeholder, style }) => {
   const [localValue, setLocalValue] = useState(value || '');
-  const lastSentValue = useRef(value || '');
+  const isDirty = localValue !== (value || '');
 
   useEffect(() => {
-    const safeValue = value || '';
-    if (safeValue !== lastSentValue.current) {
-      setLocalValue(safeValue);
-      lastSentValue.current = safeValue;
+    if (!isDirty) {
+      setLocalValue(value || '');
     }
-  }, [value]);
+  }, [value, isDirty]);
 
-  const handleChange = (e) => {
-    setLocalValue(e.target.value);
+  const handleSave = () => {
+    if (isDirty) {
+      onChange(localValue);
+    }
   };
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      if (localValue !== lastSentValue.current) {
-        onChange(localValue);
-        lastSentValue.current = localValue;
-      }
-    }, delay);
-    return () => clearTimeout(handler);
-  }, [localValue, onChange, delay]);
+  const handleBlur = () => {
+    handleSave();
+  };
 
-  return <textarea value={localValue} onChange={handleChange} {...props} />;
+  const handleKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
+  return (
+    <div style={{display: 'flex', flexDirection: 'column', gap: '8px', width: '100%'}}>
+      <textarea 
+        className="notes-area" 
+        placeholder={placeholder}
+        value={localValue} 
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        style={style} 
+      />
+      {isDirty && (
+        <div style={{display: 'flex', justifyContent: 'flex-end', transition: 'all 0.3s'}}>
+          <button className="btn-primary" style={{padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px'}} onClick={handleSave}>
+            <FiSave /> Lưu Ghi Chú
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default function App() {
@@ -510,7 +530,7 @@ export default function App() {
 
               <div style={{marginBottom: '24px'}}>
                 <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', marginBottom: '12px'}}><FiFileText /> Ghi chú</h3>
-                <DebouncedTextarea key={`${selectedStock.id}-notes`} className="notes-area" placeholder="Ghi chú..." value={selectedStock.notes || ''} onChange={(val) => handleUpdateStock(selectedStock.id, 'notes', val)} />
+                <ManualNoteEditor key={`${selectedStock.id}-notes`} placeholder="Ghi chú..." value={selectedStock.notes || ''} onChange={(val) => handleUpdateStock(selectedStock.id, 'notes', val)} />
               </div>
 
               <div>
@@ -557,9 +577,8 @@ export default function App() {
                             </span>
                           </div>
                           <div style={{paddingLeft: '30px'}}>
-                            <DebouncedTextarea 
+                            <ManualNoteEditor 
                               key={`${selectedStock.id}-${item.id}`}
-                              className="notes-area" 
                               placeholder="Thêm phân tích/đánh giá chi tiết cho mục này..."
                               value={comment}
                               onChange={(val) => handleChecklistCommentChange(item.id, val)}
