@@ -17,6 +17,29 @@ const debounceByKey = (func, wait) => {
   };
 };
 
+const DebouncedTextarea = ({ value, onChange, delay = 500, ...props }) => {
+  const [localValue, setLocalValue] = useState(value || '');
+
+  useEffect(() => {
+    setLocalValue(value || '');
+  }, [value]);
+
+  const handleChange = (e) => {
+    setLocalValue(e.target.value);
+  };
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (localValue !== (value || '')) {
+        onChange(localValue);
+      }
+    }, delay);
+    return () => clearTimeout(handler);
+  }, [localValue, value, onChange, delay]);
+
+  return <textarea value={localValue} onChange={handleChange} {...props} />;
+};
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,7 +215,7 @@ export default function App() {
     });
   };
 
-  const handleChecklistCommentChange = (itemId, comment) => {
+  const handleChecklistCommentChange = useCallback((itemId, comment) => {
     if (!session?.user || !selectedStock) return;
     const currentChecklist = selectedStock.checklist || {};
     
@@ -203,7 +226,7 @@ export default function App() {
       ...currentChecklist,
       [itemId]: { checked: isChecked, comment }
     });
-  };
+  }, [session, selectedStock, stocks]);
 
   const handleDeleteStock = async (id) => {
     if (!session?.user || !confirm("Bạn có chắc muốn xoá mã này khỏi danh sách?")) return;
@@ -438,7 +461,7 @@ export default function App() {
 
               <div style={{marginBottom: '24px'}}>
                 <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', marginBottom: '12px'}}><FiFileText /> Ghi chú</h3>
-                <textarea className="notes-area" placeholder="Ghi chú..." value={selectedStock.notes || ''} onChange={(e) => handleUpdateStock(selectedStock.id, 'notes', e.target.value)} />
+                <DebouncedTextarea className="notes-area" placeholder="Ghi chú..." value={selectedStock.notes || ''} onChange={(val) => handleUpdateStock(selectedStock.id, 'notes', val)} />
               </div>
 
               <div>
@@ -485,11 +508,11 @@ export default function App() {
                             </span>
                           </div>
                           <div style={{paddingLeft: '30px'}}>
-                            <textarea 
+                            <DebouncedTextarea 
                               className="notes-area" 
                               placeholder="Thêm phân tích/đánh giá chi tiết cho mục này..."
                               value={comment}
-                              onChange={(e) => handleChecklistCommentChange(item.id, e.target.value)}
+                              onChange={(val) => handleChecklistCommentChange(item.id, val)}
                               style={{minHeight: '80px', fontSize: '0.9rem', backgroundColor: 'rgba(255,255,255,0.02)'}}
                             />
                           </div>
