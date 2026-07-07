@@ -269,6 +269,30 @@ export default function App() {
     ? templates.find(t => t.id === selectedStock.template_id)?.data || defaultChecklistTemplate
     : defaultChecklistTemplate;
 
+  const getChecklistProgress = (stock) => {
+    const template = stock.template_id 
+      ? templates.find(t => t.id === stock.template_id)?.data || defaultChecklistTemplate
+      : defaultChecklistTemplate;
+      
+    let total = 0;
+    let checked = 0;
+    
+    if (template) {
+      template.forEach(section => {
+        if (section.items) {
+          section.items.forEach(item => {
+            total++;
+            const currentVal = stock.checklist?.[item.id];
+            const isChecked = typeof currentVal === 'object' ? currentVal?.checked : !!currentVal;
+            if (isChecked) checked++;
+          });
+        }
+      });
+    }
+    
+    return { checked, total };
+  };
+
   return (
     <div className="app-container">
       <header className="header">
@@ -338,11 +362,14 @@ export default function App() {
                 <tr>
                   <th>Mã CP</th>
                   <th>Phân loại (Tag)</th>
+                  <th>Checklist</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {sortedStocks.map(stock => (
+                {sortedStocks.map(stock => {
+                  const progress = getChecklistProgress(stock);
+                  return (
                   <tr 
                     key={stock.id} 
                     onClick={() => setSelectedStock(stock)}
@@ -354,13 +381,16 @@ export default function App() {
                         {stock.tag === 'tbd' ? 'TBD' : stock.tag === 'in' ? 'IN' : stock.tag === 'out' ? 'OUT' : 'TOO ROUGH'}
                       </span>
                     </td>
+                    <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {progress.checked}/{progress.total}
+                    </td>
                     <td>
                       <button className="btn-outline" style={{padding: '6px', border: 'none', color: '#f87171'}} onClick={(e) => { e.stopPropagation(); handleDeleteStock(stock.id); }}>
                         <FiTrash2 />
                       </button>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
