@@ -5,6 +5,15 @@ import { defaultChecklistTemplate } from './data/defaultChecklist';
 import tickerData from './data/tickers.json';
 import './index.css';
 
+// Debounce helper
+const debounce = (func, wait) => {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -139,7 +148,14 @@ export default function App() {
     }
   };
 
-  const handleUpdateStock = async (id, field, value) => {
+  const debouncedSupabaseUpdate = useMemo(
+    () => debounce(async (id, field, value) => {
+      await supabase.from('stocks').update({ [field]: value }).eq('id', id);
+    }, 600),
+    []
+  );
+
+  const handleUpdateStock = (id, field, value) => {
     if (!session?.user) return;
     
     setStocks(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
@@ -147,8 +163,7 @@ export default function App() {
       setSelectedStock(prev => ({ ...prev, [field]: value }));
     }
 
-    const { error } = await supabase.from('stocks').update({ [field]: value }).eq('id', id);
-    if (error) fetchData(); 
+    debouncedSupabaseUpdate(id, field, value);
   };
 
   const handleChecklistItemToggle = async (itemId) => {
@@ -162,20 +177,20 @@ export default function App() {
     
     const newValue = !isChecked;
     
-    await handleUpdateStock(selectedStock.id, 'checklist', {
+    handleUpdateStock(selectedStock.id, 'checklist', {
       ...currentChecklist,
       [itemId]: { checked: newValue, comment }
     });
   };
 
-  const handleChecklistCommentChange = async (itemId, comment) => {
+  const handleChecklistCommentChange = (itemId, comment) => {
     if (!session?.user || !selectedStock) return;
     const currentChecklist = selectedStock.checklist || {};
     
     const currentVal = currentChecklist[itemId];
     const isChecked = typeof currentVal === 'object' ? currentVal?.checked : !!currentVal;
     
-    await handleUpdateStock(selectedStock.id, 'checklist', {
+    handleUpdateStock(selectedStock.id, 'checklist', {
       ...currentChecklist,
       [itemId]: { checked: isChecked, comment }
     });
