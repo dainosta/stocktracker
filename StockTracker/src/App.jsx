@@ -3,7 +3,7 @@ import { supabase, signInWithEmail, signUpWithEmail, logout } from './services/s
 import { FiLogOut, FiSearch, FiPlus, FiTrash2, FiFileText, FiCheckSquare, FiSettings, FiX, FiEdit2, FiSave } from 'react-icons/fi';
 import { defaultChecklistTemplate } from './data/defaultChecklist';
 import tickerData from './data/tickers.json';
-import roicUrl from './data/roic_data.json?url';
+import initialRoicData from './data/roic_data.json';
 import './index.css';
 
 // Debounce helper
@@ -74,36 +74,17 @@ export default function App() {
   const [stocks, setStocks] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
   
-  const [roicData, setRoicData] = useState({ last_updated: 'Đang kết nối API...', data: {} });
-  
-  // Polling data ROIC mỗi 5 giây
+  const [roicData, setRoicData] = useState(initialRoicData);
+
+  // Lắng nghe cập nhật từ Vite HMR khi file json thay đổi
   useEffect(() => {
-    const fetchRoic = () => {
-      fetch(`${roicUrl}?t=${new Date().getTime()}`)
-        .then(res => res.text())
-        .then(text => {
-          try {
-            // Xử lý trường hợp Vite dev server bọc JSON trong module JS "export default {...}"
-            let jsonString = text.trim();
-            if (jsonString.startsWith('export default')) {
-              jsonString = jsonString.replace('export default', '').trim();
-              if (jsonString.endsWith(';')) jsonString = jsonString.slice(0, -1);
-            }
-            const data = JSON.parse(jsonString);
-            setRoicData(data);
-          } catch (e) {
-            console.error("Lỗi parse JSON:", e, text.substring(0, 50));
-            setRoicData({ last_updated: `Lỗi Parse: ${e.message}`, data: {} });
-          }
-        })
-        .catch(err => {
-          console.error("Lỗi tải API roic:", err);
-          setRoicData({ last_updated: `Lỗi Fetch: ${err.message}`, data: {} });
-        });
-    };
-    fetchRoic();
-    const interval = setInterval(fetchRoic, 5000);
-    return () => clearInterval(interval);
+    if (import.meta.hot) {
+      import.meta.hot.accept('./data/roic_data.json', (newModule) => {
+        if (newModule && newModule.default) {
+          setRoicData(newModule.default);
+        }
+      });
+    }
   }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
