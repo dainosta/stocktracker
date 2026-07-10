@@ -8,8 +8,8 @@ import pandas as pd
 # Ensure UTF-8 output
 sys.stdout.reconfigure(encoding='utf-8')
 
-# Delay in seconds to respect vnstock guest rate limits (20 req/minute, each ticker uses 2 reqs)
-DELAY_BETWEEN_REQUESTS = 6.5
+# Delay in seconds to respect vnstock guest rate limits
+DELAY_BETWEEN_REQUESTS = 7.5
 
 def calculate_average_roic(symbol):
     try:
@@ -89,12 +89,28 @@ def main():
     print(f"Đang xử lý (đơn luồng). Do giới hạn API miễn phí (20 req/phút), quá trình này sẽ mất khoảng {int(len(tickers) * DELAY_BETWEEN_REQUESTS / 60)} phút...")
     
     roic_data = {}
+    output_path = 'src/data/roic_data.json'
     
-    processed = 0
+    # Load existing data to resume if crashed
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, 'r', encoding='utf-8') as f:
+                existing_data = json.load(f)
+                if 'data' in existing_data:
+                    roic_data = existing_data['data']
+                    print(f"Đã tải {len(roic_data)} mã đã xử lý từ trước. Sẽ tiếp tục xử lý các mã còn lại.")
+        except Exception:
+            pass
+    
+    processed = len(roic_data)
     total = len(tickers)
     
     for symbol in tickers:
+        if symbol in roic_data:
+            continue
+            
         processed += 1
+        print(f"Đang xử lý {symbol} ({processed}/{total})...")
         _, roic = calculate_average_roic(symbol)
         
         if roic is not None:
