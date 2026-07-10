@@ -93,9 +93,13 @@ export default function App() {
             setRoicData(data);
           } catch (e) {
             console.error("Lỗi parse JSON:", e, text.substring(0, 50));
+            setRoicData({ last_updated: `Lỗi Parse: ${e.message}`, data: {} });
           }
         })
-        .catch(err => console.error("Lỗi tải API roic:", err));
+        .catch(err => {
+          console.error("Lỗi tải API roic:", err);
+          setRoicData({ last_updated: `Lỗi Fetch: ${err.message}`, data: {} });
+        });
     };
     fetchRoic();
     const interval = setInterval(fetchRoic, 5000);
