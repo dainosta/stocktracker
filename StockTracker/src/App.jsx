@@ -3,7 +3,7 @@ import { supabase, signInWithEmail, signUpWithEmail, logout } from './services/s
 import { FiLogOut, FiSearch, FiPlus, FiTrash2, FiFileText, FiCheckSquare, FiSettings, FiX, FiEdit2, FiSave } from 'react-icons/fi';
 import { defaultChecklistTemplate } from './data/defaultChecklist';
 import tickerData from './data/tickers.json';
-import roicData from './data/roic_data.json';
+
 import './index.css';
 
 // Debounce helper
@@ -73,6 +73,21 @@ export default function App() {
   
   const [stocks, setStocks] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
+  
+  const [roicData, setRoicData] = useState({ last_updated: 'Đang kết nối API...', data: {} });
+  
+  // Polling data ROIC mỗi 5 giây
+  useEffect(() => {
+    const fetchRoic = () => {
+      fetch('/roic_data.json?' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => setRoicData(data))
+        .catch(err => console.error("Lỗi tải roic_data.json:", err));
+    };
+    fetchRoic();
+    const interval = setInterval(fetchRoic, 5000);
+    return () => clearInterval(interval);
+  }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);

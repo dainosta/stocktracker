@@ -89,7 +89,7 @@ def main():
     print(f"Đang xử lý (đơn luồng). Do giới hạn API miễn phí (20 req/phút), quá trình này sẽ mất khoảng {int(len(tickers) * DELAY_BETWEEN_REQUESTS / 60)} phút...")
     
     roic_data = {}
-    output_path = 'src/data/roic_data.json'
+    output_path = 'public/roic_data.json'
     
     # Load existing data to resume if crashed
     if os.path.exists(output_path):
@@ -127,7 +127,7 @@ def main():
             "last_updated": now.strftime("%Y-%m-%d %H:%M:%S") + f" (Đang tải {processed}/{total})",
             "data": roic_data
         }
-        with open('src/data/roic_data.json', 'w', encoding='utf-8') as f:
+        with open('public/roic_data.json', 'w', encoding='utf-8') as f:
             json.dump(output_json, f, indent=2, ensure_ascii=False)
             
         # Rate limit delay (skip for last item)
