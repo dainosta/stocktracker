@@ -115,19 +115,20 @@ def main():
         
         if roic is not None:
             roic_data[symbol] = roic
+        else:
+            roic_data[symbol] = "N/A"
             
-        # Print progress and save periodically every 10 tickers
-        if processed % 10 == 0 or processed == total:
-            print(f"Tiến độ: {processed}/{total} ({(processed/total)*100:.1f}%)")
-            
-            # Save incrementally
-            now = datetime.now()
-            output_json = {
-                "last_updated": now.strftime("%Y-%m-%d %H:%M:%S") + f" (Đang tải {processed}/{total})",
-                "data": roic_data
-            }
-            with open('src/data/roic_data.json', 'w', encoding='utf-8') as f:
-                json.dump(output_json, f, indent=2, ensure_ascii=False)
+        # Print progress and save EVERY ticker so we don't lose data if it crashes
+        print(f"Tiến độ: {processed}/{total} ({(processed/total)*100:.1f}%)")
+        
+        # Save incrementally
+        now = datetime.now()
+        output_json = {
+            "last_updated": now.strftime("%Y-%m-%d %H:%M:%S") + f" (Đang tải {processed}/{total})",
+            "data": roic_data
+        }
+        with open('src/data/roic_data.json', 'w', encoding='utf-8') as f:
+            json.dump(output_json, f, indent=2, ensure_ascii=False)
             
         # Rate limit delay (skip for last item)
         if processed < total:
