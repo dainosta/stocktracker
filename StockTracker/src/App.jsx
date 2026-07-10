@@ -495,6 +495,7 @@ export default function App() {
                   <th>Mã CP</th>
                   <th>Phân loại (Tag)</th>
                   <th>Checklist</th>
+                  <th>ROIC (5Y)</th>
                   <th></th>
                 </tr>
               </thead>
@@ -515,6 +516,9 @@ export default function App() {
                     </td>
                     <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       {progress.checked}/{progress.total}
+                    </td>
+                    <td style={{ fontSize: '0.9rem', fontWeight: 'bold', color: roicData.data[stock.ticker] > 0 ? '#4ade80' : roicData.data[stock.ticker] < 0 ? '#f87171' : 'var(--text-muted)' }}>
+                      {roicData.data[stock.ticker] != null && roicData.data[stock.ticker] !== 'N/A' ? `${(roicData.data[stock.ticker] * 100).toFixed(2)}%` : (roicData.data[stock.ticker] === 'N/A' ? 'N/A' : '---')}
                     </td>
                     <td>
                       <button className="btn-outline" style={{padding: '6px', border: 'none', color: '#f87171'}} onClick={(e) => { e.stopPropagation(); handleDeleteStock(stock.id); }}>
