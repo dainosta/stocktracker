@@ -100,32 +100,25 @@ def main():
         if roic is not None:
             roic_data[symbol] = roic
             
-        # Print progress every 10 tickers
+        # Print progress and save periodically every 10 tickers
         if processed % 10 == 0 or processed == total:
             print(f"Tiến độ: {processed}/{total} ({(processed/total)*100:.1f}%)")
+            
+            # Save incrementally
+            now = datetime.now()
+            output_json = {
+                "last_updated": now.strftime("%Y-%m-%d %H:%M:%S") + f" (Đang tải {processed}/{total})",
+                "data": roic_data
+            }
+            with open('src/data/roic_data.json', 'w', encoding='utf-8') as f:
+                json.dump(output_json, f, indent=2, ensure_ascii=False)
             
         # Rate limit delay (skip for last item)
         if processed < total:
             time.sleep(DELAY_BETWEEN_REQUESTS)
                 
-    # Save the output
-    output_path = 'src/data/roic_data.json'
-    
-    # Get current datetime with local timezone formatted nicely
-    now = datetime.now()
-    last_updated = now.strftime("%Y-%m-%d %H:%M:%S")
-    
-    output_json = {
-        "last_updated": last_updated,
-        "data": roic_data
-    }
-    
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(output_json, f, indent=2, ensure_ascii=False)
-        
     elapsed = time.time() - start_time
-    print(f"\nHoàn thành! Đã lưu dữ liệu của {len(roic_data)} mã vào '{output_path}'.")
+    print(f"\nHoàn thành! Đã lưu dữ liệu của {len(roic_data)} mã vào 'src/data/roic_data.json'.")
     print(f"Thời gian chạy: {elapsed:.2f} giây.")
 
 if __name__ == "__main__":
