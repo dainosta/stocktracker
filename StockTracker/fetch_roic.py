@@ -9,7 +9,31 @@ import pandas as pd
 sys.stdout.reconfigure(encoding='utf-8')
 
 # Delay in seconds to respect vnstock guest rate limits
-DELAY_BETWEEN_REQUESTS = 8.0
+DELAY_BETWEEN_REQUESTS = 13.0
+
+def get_priority_tickers():
+    try:
+        print("Đang lấy danh sách mã ưu tiên từ cơ sở dữ liệu...")
+        import requests
+        from dotenv import load_dotenv
+        load_dotenv()
+        url = os.getenv('VITE_SUPABASE_URL')
+        key = os.getenv('VITE_SUPABASE_ANON_KEY')
+        if not url or not key: 
+            print("Không tìm thấy cấu hình Supabase.")
+            return set()
+        
+        headers = {'apikey': key, 'Authorization': f'Bearer {key}'}
+        res = requests.get(f"{url}/rest/v1/stocks?select=ticker", headers=headers, timeout=10)
+        if res.status_code == 200:
+            tickers = set(row['ticker'] for row in res.json())
+            print(f"Lấy thành công {len(tickers)} mã ưu tiên.")
+            return tickers
+        else:
+            print(f"Lỗi API Supabase: {res.status_code}")
+    except Exception as e:
+        print("Lỗi khi lấy danh sách ticker ưu tiên:", e)
+    return set()
 
 def calculate_average_roic(symbol):
     try:
