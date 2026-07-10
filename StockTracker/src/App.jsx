@@ -3,7 +3,7 @@ import { supabase, signInWithEmail, signUpWithEmail, logout } from './services/s
 import { FiLogOut, FiSearch, FiPlus, FiTrash2, FiFileText, FiCheckSquare, FiSettings, FiX, FiEdit2, FiSave } from 'react-icons/fi';
 import { defaultChecklistTemplate } from './data/defaultChecklist';
 import tickerData from './data/tickers.json';
-
+import roicUrl from './data/roic_data.json?url';
 import './index.css';
 
 // Debounce helper
@@ -79,7 +79,7 @@ export default function App() {
   // Polling data ROIC mỗi 5 giây
   useEffect(() => {
     const fetchRoic = () => {
-      fetch('/roic_data.json?' + new Date().getTime())
+      fetch(`${roicUrl}?t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(data => setRoicData(data))
         .catch(err => console.error("Lỗi tải roic_data.json:", err));
