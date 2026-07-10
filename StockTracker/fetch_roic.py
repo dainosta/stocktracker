@@ -9,7 +9,7 @@ import pandas as pd
 sys.stdout.reconfigure(encoding='utf-8')
 
 # Delay in seconds to respect vnstock guest rate limits
-DELAY_BETWEEN_REQUESTS = 7.5
+DELAY_BETWEEN_REQUESTS = 8.0
 
 def calculate_average_roic(symbol):
     try:

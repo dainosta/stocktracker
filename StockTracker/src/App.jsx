@@ -542,7 +542,7 @@ export default function App() {
                   <h2>{selectedStock.ticker}</h2>
                   <div style={{textAlign: 'right'}}>
                     <div style={{fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary-accent)'}}>
-                      ROIC (5Y): {roicData.data[selectedStock.ticker] != null ? `${(roicData.data[selectedStock.ticker] * 100).toFixed(2)}%` : 'N/A'}
+                      ROIC (5Y): {roicData.data[selectedStock.ticker] != null && roicData.data[selectedStock.ticker] !== 'N/A' ? `${(roicData.data[selectedStock.ticker] * 100).toFixed(2)}%` : (roicData.data[selectedStock.ticker] === 'N/A' ? 'N/A' : '---')}
                     </div>
                     <div style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>
                       Cập nhật: {roicData.last_updated}
