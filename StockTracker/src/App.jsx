@@ -428,8 +428,12 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <div>
+        <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
           <h1 style={{margin: 0, fontSize: '1.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Stock Tracker</h1>
+          <div style={{fontSize: '0.85rem', color: 'var(--text-muted)', padding: '4px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '6px'}}>
+            <div style={{width: '8px', height: '8px', borderRadius: '50%', backgroundColor: roicData.last_updated.includes('Đang tải') ? '#60a5fa' : '#4ade80', animation: roicData.last_updated.includes('Đang tải') ? 'pulse 2s infinite' : 'none'}}></div>
+            <span>Tiến độ ROIC: <strong style={{color: 'var(--primary-accent)'}}>{roicData.last_updated}</strong></span>
+          </div>
         </div>
         <div className="user-profile">
           <span>{user.email}</span>
