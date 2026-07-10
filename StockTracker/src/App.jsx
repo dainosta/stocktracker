@@ -80,9 +80,22 @@ export default function App() {
   useEffect(() => {
     const fetchRoic = () => {
       fetch(`${roicUrl}?t=${new Date().getTime()}`)
-        .then(res => res.json())
-        .then(data => setRoicData(data))
-        .catch(err => console.error("Lỗi tải roic_data.json:", err));
+        .then(res => res.text())
+        .then(text => {
+          try {
+            // Xử lý trường hợp Vite dev server bọc JSON trong module JS "export default {...}"
+            let jsonString = text.trim();
+            if (jsonString.startsWith('export default')) {
+              jsonString = jsonString.replace('export default', '').trim();
+              if (jsonString.endsWith(';')) jsonString = jsonString.slice(0, -1);
+            }
+            const data = JSON.parse(jsonString);
+            setRoicData(data);
+          } catch (e) {
+            console.error("Lỗi parse JSON:", e, text.substring(0, 50));
+          }
+        })
+        .catch(err => console.error("Lỗi tải API roic:", err));
     };
     fetchRoic();
     const interval = setInterval(fetchRoic, 5000);
