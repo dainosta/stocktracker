@@ -3,6 +3,7 @@ import { supabase, signInWithEmail, signUpWithEmail, logout } from './services/s
 import { FiLogOut, FiSearch, FiPlus, FiTrash2, FiFileText, FiCheckSquare, FiSettings, FiX, FiEdit2, FiSave } from 'react-icons/fi';
 import { defaultChecklistTemplate } from './data/defaultChecklist';
 import tickerData from './data/tickers.json';
+import roicData from './data/roic_data.json';
 import './index.css';
 
 // Debounce helper
@@ -516,8 +517,16 @@ export default function App() {
           {selectedStock ? (
             <>
               <div className="stock-header">
-                <div className="stock-title">
+                <div className="stock-title" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
                   <h2>{selectedStock.ticker}</h2>
+                  <div style={{textAlign: 'right'}}>
+                    <div style={{fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary-accent)'}}>
+                      ROIC (5Y): {roicData.data[selectedStock.ticker] != null ? `${(roicData.data[selectedStock.ticker] * 100).toFixed(2)}%` : 'N/A'}
+                    </div>
+                    <div style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>
+                      Cập nhật: {roicData.last_updated}
+                    </div>
+                  </div>
                 </div>
               </div>
 
