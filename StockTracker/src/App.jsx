@@ -3,7 +3,6 @@ import { supabase, signInWithEmail, signUpWithEmail, logout } from './services/s
 import { FiLogOut, FiSearch, FiPlus, FiTrash2, FiFileText, FiCheckSquare, FiSettings, FiX, FiEdit2, FiSave } from 'react-icons/fi';
 import { defaultChecklistTemplate } from './data/defaultChecklist';
 import tickerData from './data/tickers.json';
-import initialRoicData from './data/roic_data.json';
 import './index.css';
 
 // Debounce helper
@@ -73,19 +72,6 @@ export default function App() {
   
   const [stocks, setStocks] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
-  
-  const [roicData, setRoicData] = useState(initialRoicData);
-
-  // Lắng nghe cập nhật từ Vite HMR khi file json thay đổi
-  useEffect(() => {
-    if (import.meta.hot) {
-      import.meta.hot.accept('./data/roic_data.json', (newModule) => {
-        if (newModule && newModule.default) {
-          setRoicData(newModule.default);
-        }
-      });
-    }
-  }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -497,7 +483,6 @@ export default function App() {
                   <th>Mã CP</th>
                   <th>Phân loại (Tag)</th>
                   <th>Checklist</th>
-                  <th>ROIC (5Y)</th>
                   <th></th>
                 </tr>
               </thead>
@@ -519,9 +504,6 @@ export default function App() {
                     <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       {progress.checked}/{progress.total}
                     </td>
-                    <td style={{ fontSize: '0.9rem', fontWeight: 'bold', color: roicData.data[stock.ticker] > 0 ? '#4ade80' : roicData.data[stock.ticker] < 0 ? '#f87171' : 'var(--text-muted)' }}>
-                      {roicData.data[stock.ticker] != null && roicData.data[stock.ticker] !== 'N/A' ? `${(roicData.data[stock.ticker] * 100).toFixed(2)}%` : (roicData.data[stock.ticker] === 'N/A' ? 'N/A' : '---')}
-                    </td>
                     <td>
                       <button className="btn-outline" style={{padding: '6px', border: 'none', color: '#f87171'}} onClick={(e) => { e.stopPropagation(); handleDeleteStock(stock.id); }}>
                         <FiTrash2 />
@@ -540,14 +522,6 @@ export default function App() {
               <div className="stock-header">
                 <div className="stock-title" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
                   <h2>{selectedStock.ticker}</h2>
-                  <div style={{textAlign: 'right'}}>
-                    <div style={{fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary-accent)'}}>
-                      ROIC (5Y): {roicData.data[selectedStock.ticker] != null && roicData.data[selectedStock.ticker] !== 'N/A' ? `${(roicData.data[selectedStock.ticker] * 100).toFixed(2)}%` : (roicData.data[selectedStock.ticker] === 'N/A' ? 'N/A' : '---')}
-                    </div>
-                    <div style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>
-                      Cập nhật: {roicData.last_updated}
-                    </div>
-                  </div>
                 </div>
               </div>
 
