@@ -8,8 +8,8 @@ import pandas as pd
 # Ensure UTF-8 output
 sys.stdout.reconfigure(encoding='utf-8')
 
-# Delay in seconds to respect vnstock guest rate limits (20 req/minute)
-DELAY_BETWEEN_REQUESTS = 3.5
+# Delay in seconds to respect vnstock guest rate limits (20 req/minute, each ticker uses 2 reqs)
+DELAY_BETWEEN_REQUESTS = 6.5
 
 def calculate_average_roic(symbol):
     try:
